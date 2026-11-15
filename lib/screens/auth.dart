@@ -1,10 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../services/app_state.dart';
 import '../theme.dart';
 import 'clothes.dart';
 import 'profile.dart';
+
+/// 빌드할 때 google-services.json에서 읽어 넣는 구글 로그인용 ID. 비어 있으면 아직 설정 전.
+const String kGoogleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+bool _googleReady = false;
 
 String authErrorMessage(FirebaseAuthException e) {
   switch (e.code) {
@@ -68,13 +73,58 @@ class _LoginScreenState extends State<LoginScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
-        onPressed: () => showMsg(context, '간편 로그인은 준비 중이에요. 지금은 이메일로 가입해 주세요.'),
+        onPressed: _busy
+            ? null
+            : (method == 'google'
+                ? _googleLogin
+                : () => showMsg(context, '이 간편 로그인은 준비 중이에요. 이메일이나 구글로 시작해 주세요.')),
         child: Text(label),
       ),
     );
   }
 
   bool _busy = false;
+
+  Future<void> _googleLogin() async {
+    if (kGoogleWebClientId.isEmpty) {
+      showMsg(context, '구글 로그인 설정이 아직 끝나지 않았어요.');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      if (!_googleReady) {
+        await GoogleSignIn.instance.initialize(serverClientId: kGoogleWebClientId);
+        _googleReady = true;
+      }
+      final GoogleSignInAccount account = await GoogleSignIn.instance.authenticate();
+      final String? idToken = account.authentication.idToken;
+      if (idToken == null) {
+        if (mounted) {
+          showMsg(context, '구글 계정 정보를 받지 못했어요. 다시 시도해 주세요.');
+        }
+        return;
+      }
+      await FirebaseAuth.instance.signInWithCredential(
+        GoogleAuthProvider.credential(idToken: idToken),
+      );
+      if (!mounted) {
+        return;
+      }
+      goAfterLogin(context);
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        showMsg(context, authErrorMessage(e));
+      }
+    } catch (_) {
+      if (mounted) {
+        showMsg(context, '구글 로그인을 완료하지 못했어요. 다시 시도해 주세요.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
 
   Future<void> _emailLogin() async {
     if (!_email.text.contains('@') || _password.text.isEmpty) {

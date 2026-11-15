@@ -26,7 +26,11 @@ jobs:
           cp ci/debug.keystore ~/.android/debug.keystore
       - run: flutter pub get
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
-      - run: flutter build apk --debug
+      - name: Read the Google login client ID from google-services.json
+        run: |
+          ID=$(python3 -c "import json;d=json.load(open('google-services.json'));print(next((o['client_id'] for c in d['client'] for o in c.get('oauth_client',[]) if o.get('client_type')==3),''))")
+          echo "GOOGLE_WEB_CLIENT_ID=$ID" >> "$GITHUB_ENV"
+      - run: flutter build apk --debug --dart-define=GOOGLE_WEB_CLIENT_ID=${{ env.GOOGLE_WEB_CLIENT_ID }}
       - uses: actions/upload-artifact@v4
         with:
           name: ipeobom-apk
