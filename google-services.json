@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "764699216584",
+    "project_id": "ipeobom",
+    "storage_bucket": "ipeobom.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:764699216584:android:3d69810c7a126d9decf3fd",
+        "android_client_info": {
+          "package_name": "com.ipeobom.ipeobom"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVVsRPxzQEbdcYnb-TR9lJupyy7GyJIRM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
