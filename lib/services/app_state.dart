@@ -1,6 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// 기기 안에 저장하는 임시 상태. 서버(Firebase) 연결 후 이 클래스 내부만 바꾸면 된다.
+/// 로그인 상태는 Firebase가 관리하고, 내 정보와 횟수는 아직 기기 안에 저장한다.
 class AppState {
   AppState._();
   static final AppState instance = AppState._();
@@ -14,16 +15,10 @@ class AppState {
     _p = await SharedPreferences.getInstance();
   }
 
-  bool get loggedIn => _p.getBool('loggedIn') ?? false;
-  String get loginMethod => _p.getString('loginMethod') ?? '';
-
-  Future<void> logIn(String method) async {
-    await _p.setBool('loggedIn', true);
-    await _p.setString('loginMethod', method);
-  }
+  bool get loggedIn => FirebaseAuth.instance.currentUser != null;
 
   Future<void> logOut() async {
-    await _p.setBool('loggedIn', false);
+    await FirebaseAuth.instance.signOut();
   }
 
   String? get facePath => _p.getString('facePath');

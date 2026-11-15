@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/app_state.dart';
@@ -5,12 +6,31 @@ import '../theme.dart';
 import 'clothes.dart';
 import 'profile.dart';
 
-/// 테스트 버전: 실제 인증 없이 로그인 처리한다. Firebase 연결 후 교체.
-Future<void> finishLogin(BuildContext context, String method) async {
-  await AppState.instance.logIn(method);
-  if (!context.mounted) {
-    return;
+String authErrorMessage(FirebaseAuthException e) {
+  switch (e.code) {
+    case 'invalid-email':
+      return '이메일 형식을 확인해 주세요.';
+    case 'email-already-in-use':
+      return '이미 가입된 이메일이에요.';
+    case 'weak-password':
+      return '비밀번호가 너무 쉬워요. 더 길게 만들어 주세요.';
+    case 'user-not-found':
+    case 'wrong-password':
+    case 'invalid-credential':
+      return '이메일 또는 비밀번호가 맞지 않아요.';
+    case 'too-many-requests':
+      return '시도가 너무 많아요. 잠시 후 다시 해주세요.';
+    case 'network-request-failed':
+      return '인터넷 연결을 확인해 주세요.';
+    case 'operation-not-allowed':
+      return '이메일 로그인이 아직 켜져 있지 않아요. (Firebase 설정 필요)';
+    default:
+      return '문제가 생겼어요. (${e.code})';
   }
+}
+
+/// 로그인에 성공한 뒤 다음 화면으로 보낸다.
+void goAfterLogin(BuildContext context) {
   final Widget next = AppState.instance.hasProfile ? const ClothesScreen() : const ProfileScreen();
   Navigator.of(context).pushAndRemoveUntil(
     MaterialPageRoute<void>(builder: (_) => next),
@@ -48,18 +68,38 @@ class _LoginScreenState extends State<LoginScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
-        onPressed: () => finishLogin(context, method),
+        onPressed: () => showMsg(context, '간편 로그인은 준비 중이에요. 지금은 이메일로 가입해 주세요.'),
         child: Text(label),
       ),
     );
   }
 
-  void _emailLogin() {
+  bool _busy = false;
+
+  Future<void> _emailLogin() async {
     if (!_email.text.contains('@') || _password.text.isEmpty) {
       showMsg(context, '이메일과 비밀번호를 입력해 주세요.');
       return;
     }
-    finishLogin(context, 'email');
+    setState(() => _busy = true);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _email.text.trim(),
+        password: _password.text,
+      );
+      if (!mounted) {
+        return;
+      }
+      goAfterLogin(context);
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        showMsg(context, authErrorMessage(e));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
   }
 
   @override
@@ -112,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: const InputDecoration(hintText: '비밀번호 입력'),
               ),
               const SizedBox(height: 20),
-              FilledButton(onPressed: _emailLogin, child: const Text('로그인')),
+              FilledButton(onPressed: _busy ? null : _emailLogin, child: Text(_busy ? '로그인 중...' : '로그인')),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -130,12 +170,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text('아이디·비밀번호 찾기'),
                   ),
                 ],
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '테스트 버전: 실제 계정 확인 없이 로그인됩니다.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: Color(0xFF666666)),
               ),
             ],
           ),
@@ -183,7 +217,9 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  void _submit() {
+  bool _busy = false;
+
+  Future<void> _submit() async {
     if (!_email.text.contains('@')) {
       showMsg(context, '이메일을 확인해 주세요.');
       return;
@@ -200,7 +236,25 @@ class _SignupScreenState extends State<SignupScreen> {
       showMsg(context, '필수 항목에 동의해 주세요.');
       return;
     }
-    finishLogin(context, 'email');
+    setState(() => _busy = true);
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _email.text.trim(),
+        password: _password.text,
+      );
+      if (!mounted) {
+        return;
+      }
+      goAfterLogin(context);
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        showMsg(context, authErrorMessage(e));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
   }
 
   @override
@@ -236,7 +290,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   SizedBox(
                     width: 84,
                     child: OutlinedButton(
-                      onPressed: () => showMsg(context, '테스트 버전에서는 문자 인증을 건너뜁니다.'),
+                      onPressed: () => showMsg(context, '문자 인증은 준비 중이에요. 지금은 건너뛰어도 가입돼요.'),
                       child: const Text('인증'),
                     ),
                   ),
@@ -262,7 +316,7 @@ class _SignupScreenState extends State<SignupScreen> {
               _agree('[필수] 얼굴·신체 사진 처리 동의', _photo, (bool v) => setState(() => _photo = v)),
               _agree('[선택] 혜택·이벤트 알림 받기', _marketing, (bool v) => setState(() => _marketing = v)),
               const SizedBox(height: 16),
-              FilledButton(onPressed: _submit, child: const Text('가입하기')),
+              FilledButton(onPressed: _busy ? null : _submit, child: Text(_busy ? '가입 중...' : '가입하기')),
             ],
           ),
         ),
@@ -279,8 +333,38 @@ class RecoverScreen extends StatefulWidget {
 }
 
 class _RecoverScreenState extends State<RecoverScreen> {
-  String _tab = 'id';
-  String _method = 'phone';
+  final TextEditingController _email = TextEditingController();
+  String _tab = 'pw';
+  String _method = 'email';
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendReset() async {
+    if (!_email.text.contains('@')) {
+      showMsg(context, '가입한 이메일을 입력해 주세요.');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: _email.text.trim());
+      if (mounted) {
+        showMsg(context, '재설정 메일을 보냈어요. 메일함(스팸함 포함)을 확인해 주세요.');
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        showMsg(context, authErrorMessage(e));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -349,7 +433,7 @@ class _RecoverScreenState extends State<RecoverScreen> {
                     SizedBox(
                       width: 124,
                       child: OutlinedButton(
-                        onPressed: () => showMsg(context, '테스트 버전에서는 문자가 발송되지 않아요.'),
+                        onPressed: () => showMsg(context, '문자 인증은 준비 중이에요.'),
                         child: const Text('인증번호 받기'),
                       ),
                     ),
@@ -363,14 +447,17 @@ class _RecoverScreenState extends State<RecoverScreen> {
                 ),
               ] else ...<Widget>[
                 const FieldLabel('이메일'),
-                const TextField(
+                TextField(
+                  controller: _email,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(hintText: 'name@example.com'),
+                  decoration: const InputDecoration(hintText: 'name@example.com'),
                 ),
               ],
               const SizedBox(height: 20),
               FilledButton(
-                onPressed: () => showMsg(context, '테스트 버전에서는 아직 동작하지 않아요.'),
+                onPressed: _busy
+                    ? null
+                    : (usePhone ? () => showMsg(context, '문자 인증은 준비 중이에요. 이메일로 찾아주세요.') : _sendReset),
                 child: Text(action),
               ),
               const SizedBox(height: 20),
