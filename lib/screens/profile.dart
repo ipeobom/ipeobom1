@@ -140,9 +140,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              const Text(
-                '전신 사진은 머리부터 발끝까지, 정면으로 선 모습이 가장 잘 나와요.',
-                style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: kSurface, borderRadius: BorderRadius.circular(14)),
+                child: const Text(
+                  '전신 사진 잘 찍는 법\n'
+                  '· 폰을 세로로 들고 찍어 주세요\n'
+                  '· 머리부터 발끝까지, 몸이 화면을 꽉 채우게\n'
+                  '· 정면을 보고 팔은 몸 옆에 자연스럽게\n'
+                  '· 몸에 붙는 옷을 입으면 더 정확해요\n'
+                  '· 테두리나 글자가 들어간 사진은 피해 주세요',
+                  style: TextStyle(fontSize: 13, height: 1.6, color: Color(0xFF333333)),
+                ),
               ),
               const SizedBox(height: 28),
               Row(

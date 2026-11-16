@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../services/app_state.dart';
 import '../services/engine_select.dart';
+import '../services/photo_prep.dart';
 import '../services/tryon_engine.dart';
 import '../theme.dart';
 import '../widgets/pick.dart';
@@ -58,7 +59,7 @@ class _ClothesScreenState extends State<ClothesScreen> {
     try {
       final TryOnResult result = await tryOnEngine.generate(
         TryOnRequest(
-          personImagePath: person,
+          personImagePath: await preparePersonPhoto(person),
           garmentImagePath: garment,
           category: _category,
           heightCm: s.heightCm,

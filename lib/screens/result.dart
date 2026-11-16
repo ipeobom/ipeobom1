@@ -1,9 +1,43 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:gal/gal.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../services/tryon_engine.dart';
 import '../theme.dart';
+
+Future<void> _saveToGallery(BuildContext context, String path) async {
+  try {
+    if (!await Gal.hasAccess()) {
+      final bool granted = await Gal.requestAccess();
+      if (!granted) {
+        if (context.mounted) {
+          showMsg(context, '사진 저장 권한이 필요해요. 설정에서 허용해 주세요.');
+        }
+        return;
+      }
+    }
+    await Gal.putImage(path, album: '입어봄');
+    if (context.mounted) {
+      showMsg(context, '갤러리의 "입어봄" 앨범에 저장했어요.');
+    }
+  } catch (_) {
+    if (context.mounted) {
+      showMsg(context, '저장하지 못했어요. 다시 시도해 주세요.');
+    }
+  }
+}
+
+Future<void> _share(BuildContext context, String path) async {
+  try {
+    await Share.shareXFiles(<XFile>[XFile(path)], text: '입어봄으로 입어봤어요');
+  } catch (_) {
+    if (context.mounted) {
+      showMsg(context, '공유하지 못했어요. 다시 시도해 주세요.');
+    }
+  }
+}
 
 class ResultScreen extends StatelessWidget {
   const ResultScreen({
@@ -32,7 +66,7 @@ class ResultScreen extends StatelessWidget {
                 child: Container(
                   height: 440,
                   color: const Color(0xFFE5E7EB),
-                  child: Image.file(File(result.imagePath), fit: BoxFit.cover, width: double.infinity),
+                  child: Image.file(File(result.imagePath), fit: BoxFit.contain, width: double.infinity),
                 ),
               ),
               if (result.isMock) ...<Widget>[
@@ -79,7 +113,7 @@ class ResultScreen extends StatelessWidget {
                 children: <Widget>[
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => showMsg(context, '저장 기능은 준비 중이에요.'),
+                      onPressed: () => _saveToGallery(context, result.imagePath),
                       icon: const Icon(Icons.download_outlined),
                       label: const Text('저장'),
                     ),
@@ -87,7 +121,7 @@ class ResultScreen extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => showMsg(context, '공유 기능은 준비 중이에요.'),
+                      onPressed: () => _share(context, result.imagePath),
                       icon: const Icon(Icons.ios_share),
                       label: const Text('공유'),
                     ),
