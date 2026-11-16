@@ -26,7 +26,7 @@ jobs:
           cp ci/debug.keystore ~/.android/debug.keystore
       - run: flutter pub get
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
-      - run: flutter build apk --debug --dart-define=TRYON_API_KEY=${{ secrets.TRYON_API_KEY }}
+      - run: flutter build apk --debug --dart-define=TRYON_API_KEY=${{ secrets.TRYON_API_KEY }} --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
       - uses: actions/upload-artifact@v4
         with:
           name: ipeobom-apk
