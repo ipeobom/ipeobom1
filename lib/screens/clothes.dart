@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../services/app_state.dart';
+import '../services/engine_select.dart';
 import '../services/tryon_engine.dart';
 import '../theme.dart';
 import '../widgets/pick.dart';
@@ -77,6 +78,10 @@ class _ClothesScreenState extends State<ClothesScreen> {
           ),
         ),
       );
+    } on TryOnException catch (e) {
+      if (mounted) {
+        showMsg(context, e.message);
+      }
     } catch (_) {
       if (mounted) {
         showMsg(context, '입어보기에 실패했어요. 다시 시도해 주세요.');

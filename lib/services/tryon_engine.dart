@@ -23,6 +23,14 @@ class TryOnResult {
   final bool isMock;
 }
 
+/// 사용자에게 보여줄 문구를 담은 엔진 오류.
+class TryOnException implements Exception {
+  TryOnException(this.message, {this.code = ''});
+
+  final String message;
+  final String code;
+}
+
 abstract class TryOnEngine {
   Future<TryOnResult> generate(TryOnRequest request);
 }
@@ -36,5 +44,3 @@ class MockTryOnEngine implements TryOnEngine {
   }
 }
 
-/// 실제 엔진 연결 시 이 줄만 바꾼다.
-final TryOnEngine tryOnEngine = MockTryOnEngine();
