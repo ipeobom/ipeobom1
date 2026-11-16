@@ -7,8 +7,8 @@ import '../theme.dart';
 import 'clothes.dart';
 import 'profile.dart';
 
-/// 빌드할 때 google-services.json에서 읽어 넣는 구글 로그인용 ID. 비어 있으면 아직 설정 전.
-const String kGoogleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+/// Firebase의 Google 로그인 설정에서 발급된 웹 클라이언트 ID.
+const String kGoogleWebClientId = '764699216584-1t8oeb9mh1qn09fb3kl0phtc1d2kf6v3.apps.googleusercontent.com';
 bool _googleReady = false;
 
 String authErrorMessage(FirebaseAuthException e) {
