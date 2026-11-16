@@ -73,7 +73,7 @@ class PerfectCorpEngine implements TryOnEngine {
         ],
       }),
     );
-    final Map<String, dynamic> json = _decode(res);
+    final Map<String, dynamic> json = _decode(res, 'file');
     final dynamic file = (json['data']['files'] as List<dynamic>).first;
     final dynamic req = (file['requests'] as List<dynamic>).first;
 
@@ -92,7 +92,10 @@ class PerfectCorpEngine implements TryOnEngine {
       body: bytes,
     );
     if (put.statusCode >= 300) {
-      throw TryOnException('사진 업로드에 실패했어요. (${put.statusCode})');
+      throw TryOnException(
+        '사진 업로드에 실패했어요. (${put.statusCode})',
+        detail: 'step=put http=${put.statusCode} body=${_clip(put.body)}',
+      );
     }
     return file['file_id'].toString();
   }
@@ -107,7 +110,7 @@ class PerfectCorpEngine implements TryOnEngine {
         'garment_category': category,
       }),
     );
-    final Map<String, dynamic> json = _decode(res);
+    final Map<String, dynamic> json = _decode(res, 'task:$category');
     return json['data']['task_id'].toString();
   }
 
@@ -118,7 +121,7 @@ class PerfectCorpEngine implements TryOnEngine {
         Uri.parse('$_base/task/cloth-v4/${Uri.encodeComponent(taskId)}'),
         headers: _headers,
       );
-      final Map<String, dynamic> json = _decode(res);
+      final Map<String, dynamic> json = _decode(res, 'poll');
       final dynamic data = json['data'];
       final String status = (data['task_status'] ?? '').toString();
       if (status == 'success') {
@@ -126,13 +129,19 @@ class PerfectCorpEngine implements TryOnEngine {
       }
       if (status == 'error' || data['error'] != null) {
         final String code = _errorCode(data['error']);
-        throw TryOnException(_message(code), code: code);
+        throw TryOnException(
+          _message(code),
+          code: code,
+          detail: 'step=poll body=${_clip(jsonEncode(data))}',
+        );
       }
     }
     throw TryOnException('시간이 너무 오래 걸려요. 잠시 후 다시 시도해 주세요.');
   }
 
-  Map<String, dynamic> _decode(http.Response res) {
+  String _clip(String text) => text.length > 400 ? text.substring(0, 400) : text;
+
+  Map<String, dynamic> _decode(http.Response res, String step) {
     Map<String, dynamic> json = <String, dynamic>{};
     try {
       final dynamic parsed = jsonDecode(utf8.decode(res.bodyBytes));
@@ -143,11 +152,19 @@ class PerfectCorpEngine implements TryOnEngine {
       // 본문이 JSON이 아니면 아래에서 상태 코드로 처리한다.
     }
     if (res.statusCode == 401) {
-      throw TryOnException('엔진 키가 올바르지 않아요. (설정 확인 필요)', code: 'unauthorized');
+      throw TryOnException(
+        '엔진 키가 올바르지 않아요. (설정 확인 필요)',
+        code: 'unauthorized',
+        detail: 'step=$step http=401 body=${_clip(res.body)}',
+      );
     }
     if (res.statusCode != 200 || json['data'] == null) {
       final String code = _errorCode(json['error_code'] ?? json['error']);
-      throw TryOnException(_message(code.isEmpty ? '${res.statusCode}' : code), code: code);
+      throw TryOnException(
+        _message(code.isEmpty ? '${res.statusCode}' : code),
+        code: code,
+        detail: 'step=$step http=${res.statusCode} body=${_clip(res.body)}',
+      );
     }
     return json;
   }

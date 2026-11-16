@@ -25,10 +25,13 @@ class TryOnResult {
 
 /// 사용자에게 보여줄 문구를 담은 엔진 오류.
 class TryOnException implements Exception {
-  TryOnException(this.message, {this.code = ''});
+  TryOnException(this.message, {this.code = '', this.detail = ''});
 
   final String message;
   final String code;
+
+  /// 원인 파악용 기술 정보 (단계, 응답 코드, 응답 내용 일부).
+  final String detail;
 }
 
 abstract class TryOnEngine {

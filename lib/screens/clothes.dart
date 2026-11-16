@@ -80,17 +80,50 @@ class _ClothesScreenState extends State<ClothesScreen> {
       );
     } on TryOnException catch (e) {
       if (mounted) {
-        showMsg(context, e.message);
+        _showError(e.message, e.detail);
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        showMsg(context, '입어보기에 실패했어요. 다시 시도해 주세요.');
+        _showError('입어보기에 실패했어요. 다시 시도해 주세요.', 'unexpected: $e');
       }
     } finally {
       if (mounted) {
         setState(() => _loading = false);
       }
     }
+  }
+
+  /// 테스트 빌드용: 실패 원인을 읽고 복사할 수 있게 창으로 보여준다.
+  void _showError(String message, String detail) {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('입어보기 실패'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(message),
+                if (detail.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 16),
+                  const Text('개발자에게 전달할 내용', style: TextStyle(fontSize: 12, color: kSub)),
+                  const SizedBox(height: 4),
+                  SelectableText(detail, style: const TextStyle(fontSize: 12)),
+                ],
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _logout() async {
