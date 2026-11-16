@@ -92,15 +92,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final int? h = int.tryParse(_height.text.trim());
     final int? w = int.tryParse(_weight.text.trim());
     final String? face = _face;
+    final String? body = _body;
     if (face == null) {
       showMsg(context, '얼굴 사진을 등록해 주세요.');
+      return;
+    }
+    if (body == null) {
+      showMsg(context, '전신 사진을 등록해 주세요. 옷은 전신 사진에 입혀져요.');
       return;
     }
     if (h == null || h < 100 || h > 230 || w == null || w < 25 || w > 250) {
       showMsg(context, '키와 몸무게를 확인해 주세요.');
       return;
     }
-    await AppState.instance.saveProfile(face: face, body: _body, height: h, weight: w);
+    await AppState.instance.saveProfile(face: face, body: body, height: h, weight: w);
     if (!mounted) {
       return;
     }
@@ -131,12 +136,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: <Widget>[
                   _tile('얼굴 사진', '필수', kBlue, Icons.face_outlined, _face, () => _pick(true)),
                   const SizedBox(width: 12),
-                  _tile('전신 사진', '권장 · 더 정확해요', kSub, Icons.accessibility_new, _body, () => _pick(false)),
+                  _tile('전신 사진', '필수 · 입어보기에 사용', kBlue, Icons.accessibility_new, _body, () => _pick(false)),
                 ],
               ),
               const SizedBox(height: 12),
               const Text(
-                '밝은 곳에서 정면을 보고 찍은 사진이 가장 잘 나와요.',
+                '전신 사진은 머리부터 발끝까지, 정면으로 선 모습이 가장 잘 나와요.',
                 style: TextStyle(fontSize: 13, color: Color(0xFF666666)),
               ),
               const SizedBox(height: 28),

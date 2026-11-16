@@ -26,7 +26,7 @@ class AppState {
   int? get heightCm => _p.getInt('heightCm');
   int? get weightKg => _p.getInt('weightKg');
 
-  bool get hasProfile => facePath != null && heightCm != null && weightKg != null;
+  bool get hasProfile => facePath != null && bodyPath != null && heightCm != null && weightKg != null;
 
   Future<void> saveProfile({
     required String face,

@@ -41,13 +41,13 @@ class _ClothesScreenState extends State<ClothesScreen> {
   Future<void> _tryOn() async {
     final AppState s = AppState.instance;
     final String? garment = _garment;
-    final String? person = s.bodyPath ?? s.facePath;
+    final String? person = s.bodyPath;
     if (garment == null) {
       showMsg(context, '옷 사진을 먼저 올려주세요.');
       return;
     }
     if (person == null) {
-      showMsg(context, '내 사진을 먼저 등록해 주세요.');
+      showMsg(context, '전신 사진을 먼저 등록해 주세요. 오른쪽 위 사람 모양 버튼에서 등록할 수 있어요.');
       return;
     }
     if (s.remainingToday <= 0) {
